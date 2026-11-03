@@ -21,6 +21,7 @@ export type { SurfaceName, SurfaceRef } from './material/surface.ts';
 export { PALETTES, paletteFrom } from './palette.ts';
 export type { Palette, PaletteName, PaletteRef } from './palette.ts';
 
+export type { Planted, PlantedBloom, PlantedStem } from './grow/engine.ts';
 export { ellipse, keepOut, mask, polygon, rect, roundedRect, subtract, union } from './grow/region.ts';
 export type { Box, Region } from './grow/region.ts';
 export { lineBoxes } from './grow/lines.ts';

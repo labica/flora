@@ -12,7 +12,8 @@ import type { Pt } from './core/geom.ts';
 import { Rng, hashString } from './core/rng.ts';
 import type { Seed as SeedValue } from './core/rng.ts';
 import { grow } from './grow/engine.ts';
-import type { Element } from './grow/engine.ts';
+import type { Element, Planted } from './grow/engine.ts';
+import { rect } from './grow/region.ts';
 import type { Box, Region } from './grow/region.ts';
 import { MATERIAL_NAMES, resolveMaterial } from './material/materials.ts';
 import type { MaterialRef } from './material/materials.ts';
@@ -39,6 +40,11 @@ export interface FloraOptions {
   composition?: CompositionName;
   /** A custom region; takes the place of the composition's own. */
   region?: Region;
+  /**
+   * A plant whose stems and blooms you place, such as the branches and nodes of a diagram.
+   * Leaves, sprays and buds grow around it, keeping clear of `exclude`. The composition is ignored.
+   */
+  plant?: Planted;
   /** Flowers to use. 'invent' crosses catalogue species into new ones for this seed. */
   flowers?: readonly FlowerRef[] | 'invent';
   sprays?: readonly SprayKind[];
@@ -111,7 +117,7 @@ export function flora(input: FloraOptions): Art {
     rng: rng.fork('plan'),
     thickness: o.thickness,
   });
-  const region = o.region ?? layout.region;
+  const region = o.region ?? (o.plant ? rect(0, 0, width, height) : layout.region);
   const [rx0, ry0, rx1, ry1] = region.bounds;
   const area = Math.max(1, (rx1 - rx0) * (ry1 - ry0));
   const baseUnit = clamp(Math.sqrt(area) / 7.5, 14, 170);
@@ -138,6 +144,7 @@ export function flora(input: FloraOptions): Art {
     seeds: layout.seeds,
     rng: rng.fork('grow'),
     flowers,
+    planted: o.plant,
     sprays: o.sprays ?? SPRAY_NAMES.filter(() => true).slice(0, 4),
     variants: palette.blooms.length,
     unit,

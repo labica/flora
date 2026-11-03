@@ -51,8 +51,35 @@ export interface Seed {
   crown?: boolean;
 }
 
+/** A stem the caller has already routed, such as a branch of a diagram. */
+export interface PlantedStem {
+  line: readonly Pt[];
+  /** Half-width at the start and the end. */
+  widths: readonly [number, number];
+}
+
+/** A flower the caller has already placed. */
+export interface PlantedBloom {
+  at: Pt;
+  radius: number;
+  /** Direction the flower faces, in radians. */
+  facing: number;
+  /** Index into `flowers`; picked by the seed when left out. */
+  flower?: number;
+  /** Palette bloom ink; picked by the seed when left out. */
+  variant?: number;
+}
+
+/** A plant whose structure is given: only leaves, sprays and small fillers are grown. */
+export interface Planted {
+  stems: readonly PlantedStem[];
+  blooms: readonly PlantedBloom[];
+}
+
 export interface GrowOptions {
   region: Region;
+  /** Stems and blooms placed by the caller. When given, `seeds` are ignored and no hero blooms grow. */
+  planted?: Planted;
   seeds: readonly Seed[];
   rng: Rng;
   flowers: readonly FlowerRef[];
@@ -270,6 +297,27 @@ class Grower {
     this.addStemPoints(b.line.slice(0, Math.max(2, Math.round(b.line.length * trim))), w0, w1, e.id);
     this.field.stampLine(b.line, o.unit * 0.05);
     return e.id;
+  }
+
+  /** Lays down a caller's stems and blooms, as `mainStem` and `bloomAt` would have. */
+  plant(p: Planted): void {
+    const { o, field } = this;
+    p.stems.forEach((s) => {
+      if (s.line.length < 2) return;
+      const [w0, w1] = s.widths;
+      const e = this.add('stem', LAYER.stem, [stemPart(s.line, w0, w1)], s.line[0]!, -1);
+      this.addStemPoints(s.line, w0, w1, e.id);
+      field.stampLine(s.line, Math.max(w0, o.unit * 0.05));
+    });
+    p.blooms.forEach((b, i) => {
+      const r = this.rng.fork(`pb${i}`);
+      const sp = b.flower !== undefined ? this.species[b.flower % this.species.length]! : r.pick(this.species);
+      const tilt = r.range(sp.tilt[0], sp.tilt[1]);
+      const v = b.variant ?? r.int(0, Math.max(0, o.variants - 1));
+      const built = buildFlower(sp, r, b.at, b.radius, b.facing, tilt, v, o.detail ?? 1);
+      this.add('bloom', LAYER.bloom, built.parts, b.at, -1);
+      field.stampDisc(b.at[0], b.at[1], b.radius, 1.02);
+    });
   }
 
   /** Phase: hero blooms, largest holes first. */
@@ -515,6 +563,16 @@ export function grow(o: GrowOptions): Growth {
     return { elements: g.elements, field: g.field };
   }
   const D = clamp(density, 0.1, 1.6);
+  if (o.planted) {
+    // The structure is the caller's: dress it with foliage, a few sprays and small fillers.
+    g.plant(o.planted);
+    g.phaseLeaves();
+    g.excluded.length = 0;
+    g.phaseSprays(unit * lerp(0.6, 0.4, clamp(D, 0, 1)), Math.round(o.planted.blooms.length * 0.6 * D) + 1);
+    g.excluded.length = 0;
+    g.phaseFill(unit * lerp(0.32, 0.16, clamp(D, 0, 1)), Math.round(o.planted.blooms.length * 3 * D) + 2);
+    return { elements: g.elements, field: g.field };
+  }
   o.seeds.forEach((s, i) => g.mainStem(s, i));
   if (o.scattered || !g.stems.length) g.openField();
 
