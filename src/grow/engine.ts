@@ -325,11 +325,11 @@ class Grower {
   }
 
   /** Phase: leaves hung at nodes along the stems, alternating sides. */
-  phaseLeaves(): void {
+  phaseLeaves(fromId = 0): void {
     const { o, field } = this;
     const s = o.leafScale ?? 1;
     const L = o.unit * 0.85 * s;
-    const stems = this.elements.filter((e) => e.type === 'stem');
+    const stems = this.elements.filter((e) => e.type === 'stem' && e.id >= fromId);
     for (const e of stems) {
       const rib = e.parts[0]!.rib!;
       const len = rib.length;
@@ -396,6 +396,51 @@ class Grower {
       this.clearNear(c, goal.r * 2);
       placed++;
     }
+  }
+
+  /** The shortest clear run from a point out to the edge of the region, as [edge point, heading in]. */
+  entry(c: Pt): { at: Pt; heading: number; length: number } | null {
+    const { o, field } = this;
+    const [x0, y0, x1, y1] = o.region.bounds;
+    const near = field.cell * 2;
+    let best: { at: Pt; heading: number; length: number } | null = null;
+    for (let k = 0; k < 24; k++) {
+      const a = (k / 24) * TAU;
+      for (let len = field.cell; !best || len < best.length; len += field.cell) {
+        const q = polar(c, a, len);
+        if (o.forbid?.(q[0], q[1]) || field.at(q[0], q[1]) < 0) break;
+        if (q[0] < x0 + near || q[0] > x1 - near || q[1] < y0 + near || q[1] > y1 - near) {
+          best = { at: q, heading: a + Math.PI, length: len };
+          break;
+        }
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Phase: space walled in by text, such as beside a run of short lines. Nothing can branch across
+   * the text, so a new stem comes in from the edge of the page. Returns the first new element id.
+   */
+  phasePockets(rMin: number, limit: number): number {
+    const { o, field } = this;
+    const first = this.elements.length;
+    const [x0, y0, x1, y1] = o.region.bounds;
+    const size = Math.max(x1 - x0, y1 - y0);
+    const skipped: Circle[] = [];
+    for (let placed = 0, tries = 0; placed < limit && tries < limit * 4; tries++) {
+      const goal = field.largest(Infinity, skipped);
+      if (!goal || goal.r < rMin) break;
+      const way = this.entry([goal.x, goal.y]);
+      const before = this.elements.length;
+      if (way) this.mainStem({ at: way.at, heading: way.heading, length: (way.length + goal.r * 0.8) / size }, 100 + tries);
+      if (this.elements.length === before) {
+        skipped.push(goal);
+        continue;
+      }
+      placed++;
+    }
+    return first;
   }
 
   /** Phase: buds, leaflets and tendrils tucked into what is left. */
@@ -490,6 +535,16 @@ export function grow(o: GrowOptions): Growth {
   g.phaseSprays(unit * lerp(0.6, 0.36, clamp(D, 0, 1)), Math.round(bloomLimit * 1.3 * D) + 1);
   g.phaseBlooms(Math.ceil(bloomLimit * 0.5), unit * 0.3);
   g.excluded.length = 0;
+  if (o.forbid && !o.scattered) {
+    const first = g.phasePockets(unit * 0.5, 3);
+    if (g.elements.length > first) {
+      g.phaseBlooms(Math.ceil(bloomLimit * 0.25), unit * 0.3);
+      g.phaseLeaves(first);
+      g.excluded.length = 0;
+      g.phaseSprays(unit * 0.36, 3);
+      g.excluded.length = 0;
+    }
+  }
   if (!o.scattered) g.phaseFill(unit * lerp(0.3, 0.13, clamp(D, 0, 1)), Math.round(bloomLimit * 10 * D) + 2);
   return { elements: g.elements, field: g.field };
 }

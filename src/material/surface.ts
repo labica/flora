@@ -7,6 +7,11 @@ export const SURFACES = {
   ivory: { name: 'ivory', background: '#f5efe0', base: '#f5efe0' },
   cream: { name: 'cream', background: '#f3e8d2', base: '#f3e8d2' },
   linen: { name: 'linen', background: '#e9e2d3', base: '#e9e2d3' },
+  celadon: {
+    name: 'celadon',
+    background: { type: 'linear', from: [0, 0], to: [0, 900], stops: [{ at: 0, color: '#c0cfbd' }, { at: 1, color: '#a3b8a9' }] },
+    base: '#b3c5b4',
+  },
   ink: { name: 'ink', background: '#10233f', base: '#10233f' },
   night: { name: 'night', background: '#0b0d18', base: '#0b0d18' },
   lacquer: {

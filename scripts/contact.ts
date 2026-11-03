@@ -7,6 +7,7 @@ const set: [NonNullable<FloraOptions['style']>, NonNullable<FloraOptions['compos
   ['delft', 'panel', 420, 520], ['morris', 'tile', 420, 420], ['minhwa', 'bouquet', 420, 520], ['najeon', 'wreath', 420, 420],
   ['illuminated', 'frame', 420, 520], ['cathedral', 'arch', 420, 520], ['cloisonne', 'rosette', 420, 420], ['herbarium', 'specimen', 420, 520],
   ['sampler', 'corner', 420, 420], ['paperGarden', 'band', 840, 200], ['nightGarden', 'panel', 420, 420], ['ukiyo', 'marginRight', 420, 520], ['sketch', 'header', 840, 200],
+  ['risograph', 'panel', 420, 520], ['goryeo', 'wreath', 420, 420],
 ];
 let html = '<!doctype html><body style="margin:12px;background:#ddd;display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px;width:1740px">';
 let total = 0;

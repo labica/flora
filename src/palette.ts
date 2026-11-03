@@ -23,6 +23,7 @@ export const PALETTES = {
   rouge: { blooms: ['#b91c3c', '#e11d48', '#9f1239'], leaf: '#14532d', stem: '#3f2a1f', heart: '#eab308', gold: '#d6a72c' },
   sepia: { blooms: ['#6b4a33', '#8a6444', '#a98660'], leaf: '#5a4633', stem: '#3d2c20', heart: '#7a5230', gold: '#a57c3f' },
   jade: { blooms: ['#0f766e', '#14b8a6', '#2dd4bf'], leaf: '#065f46', stem: '#064e3b', heart: '#ca8a04', gold: '#d4af37' },
+  riso: { blooms: ['#ff48b0', '#f15060', '#0078bf', '#ffb511'], leaf: '#00a95c', stem: '#0078bf', heart: '#ffb511', gold: '#ffb511' },
   mono: { blooms: ['#1f2937', '#374151', '#6b7280'], leaf: '#111827', stem: '#111827', heart: '#111827', gold: '#4b5563' },
 } as const satisfies Record<string, Palette>;
 

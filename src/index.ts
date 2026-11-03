@@ -23,8 +23,10 @@ export type { Palette, PaletteName, PaletteRef } from './palette.ts';
 
 export { ellipse, keepOut, mask, polygon, rect, roundedRect, subtract, union } from './grow/region.ts';
 export type { Box, Region } from './grow/region.ts';
+export { lineBoxes } from './grow/lines.ts';
 
-export { toSVG } from './scene/svg.ts';
+export { svgDataURL, toSVG } from './scene/svg.ts';
+export type { SvgOptions } from './scene/svg.ts';
 export { drawScene } from './scene/canvas.ts';
 export type { Ctx2D } from './scene/canvas.ts';
 export type { DrawOp, Paint, Scene } from './scene/types.ts';

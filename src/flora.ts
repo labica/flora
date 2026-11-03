@@ -23,7 +23,7 @@ import { PALETTES, inks, resolvePalette } from './palette.ts';
 import type { PaletteName, PaletteRef } from './palette.ts';
 import { drawScene } from './scene/canvas.ts';
 import type { Ctx2D } from './scene/canvas.ts';
-import { toSVG } from './scene/svg.ts';
+import { svgDataURL, toSVG } from './scene/svg.ts';
 import type { SvgOptions } from './scene/svg.ts';
 import type { DrawOp, Scene } from './scene/types.ts';
 import { STYLES } from './styles.ts';
@@ -75,7 +75,7 @@ export interface Art {
   readonly stats: Stats;
   toSVG(options?: SvgOptions): string;
   /** A `data:` URL, ready for CSS `background-image` or `<img src>`. */
-  toDataURL(): string;
+  toDataURL(options?: SvgOptions): string;
   draw(ctx: Ctx2D): void;
   /** The scene part-way through growing: 0 is bare, 1 is finished. */
   frame(progress: number): Scene;
@@ -184,7 +184,7 @@ export function flora(input: FloraOptions): Art {
       ops: count(ops),
     },
     toSVG: (opts) => toSVG(scene, { idPrefix, ...opts }),
-    toDataURL: () => `data:image/svg+xml,${encodeURIComponent(toSVG(scene, { idPrefix }))}`,
+    toDataURL: (opts) => svgDataURL(toSVG(scene, { idPrefix, ...opts })),
     draw: (ctx) => drawScene(ctx, scene),
     frame(progress) {
       const p = clamp(progress, 0, 1);

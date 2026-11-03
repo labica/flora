@@ -33,6 +33,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test \"tests/**/*.test.ts\"",
     "demo": "node scripts/build-demo.mjs",
+    "size": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/size.ts",
     "gallery": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/gallery.ts"
   },
   "devDependencies": {

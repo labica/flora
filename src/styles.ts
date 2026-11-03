@@ -28,6 +28,10 @@ export const STYLES = {
   nightGarden: { material: 'neon', palette: 'dusk', surface: 'night', flowers: ['lily', 'aster', 'cosmos'], sprays: ['umbel', 'cyme'], density: 0.6 },
   /** Woodblock print colours. */
   ukiyo: { material: 'gouache', palette: 'ukiyo', surface: 'ivory', flowers: ['cherryBlossom', 'chrysanthemum', 'morningGlory'], sprays: ['wisteria', 'fern'], density: 0.75 },
+  /** Two-ink stencil print: bright inks, a dot screen, plates slightly out of register. */
+  risograph: { material: 'riso', palette: 'riso', surface: 'paper', flowers: ['poppy', 'cosmos', 'tulip', 'anemone'], sprays: ['lavender', 'fern'], density: 0.8 },
+  /** 고려청자 상감: 비취빛 유약 아래 흰 꽃과 검은 줄기. */
+  goryeo: { material: 'celadon', palette: 'mono', surface: 'celadon', flowers: ['peony', 'chrysanthemum', 'lotus', 'plumBlossom'], sprays: ['cyme', 'berries'], density: 0.75 },
   /** Fine line only. */
   sketch: { material: 'ink', palette: 'mono', surface: 'paper', flowers: ['rose', 'poppy', 'cosmos', 'lily'], sprays: ['fern', 'umbel', 'gypsophila'], density: 0.75 },
 } as const satisfies Record<string, StyleOptions>;

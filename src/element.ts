@@ -1,10 +1,12 @@
 /**
  * <flora-art> fills its box and regrows when resized. Import once for the side effect.
  *   <flora-art seed="docs/intro.md" flora-style="delft" composition="margin"></flora-art>
- * Children marked [data-flora-keep] are kept clear of ornament.
+ * Children marked [data-flora-keep] are kept clear of ornament. With data-flora-keep="lines" the
+ * ornament follows the text itself, moving into the space beside short lines.
  */
 import { flora } from './flora.ts';
 import type { FloraOptions } from './flora.ts';
+import { lineBoxes } from './grow/lines.ts';
 import type { Box } from './grow/region.ts';
 import { drawScene } from './scene/canvas.ts';
 import type { Scene } from './scene/types.ts';
@@ -24,6 +26,10 @@ export class FloraElement extends HTMLElement {
     root.prepend(this.canvas);
     this.observer = new ResizeObserver(() => this.schedule());
     this.observer.observe(this);
+    // Web fonts change where lines break.
+    void document.fonts?.ready.then(() => {
+      if (this.isConnected) this.schedule();
+    });
   }
 
   disconnectedCallback(): void {
@@ -43,9 +49,20 @@ export class FloraElement extends HTMLElement {
 
   private keepBoxes(): Box[] {
     const host = this.getBoundingClientRect();
-    return [...this.querySelectorAll('[data-flora-keep]')].map((el) => {
-      const r = el.getBoundingClientRect();
-      return { x: r.left - host.left, y: r.top - host.top, width: r.width, height: r.height };
+    const box = (r: DOMRect): Box => ({ x: r.left - host.left, y: r.top - host.top, width: r.width, height: r.height });
+    return [...this.querySelectorAll('[data-flora-keep]')].flatMap((el) => {
+      if (el.getAttribute('data-flora-keep') !== 'lines') return [box(el.getBoundingClientRect())];
+      // Text nodes only: a range over elements also reports their full block boxes.
+      const rects: Box[] = [];
+      const range = document.createRange();
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        if (!walker.currentNode.nodeValue?.trim()) continue;
+        range.selectNodeContents(walker.currentNode);
+        rects.push(...[...range.getClientRects()].map(box));
+      }
+      const lines = lineBoxes(rects);
+      return lines.length ? lines : [box(el.getBoundingClientRect())];
     });
   }
 

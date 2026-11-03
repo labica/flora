@@ -6,7 +6,7 @@
  * Curtis et al. (1997) as simplified by florilegium and tikz-flora (MIT).
  */
 import { mixHex, relight } from '../core/color.ts';
-import { centroid, circlePoly, clamp, deform, dist, lerp, mid, ribbon, transform } from '../core/geom.ts';
+import { bounds, centroid, circlePoly, clamp, deform, dist, lerp, mid, pointInPolygon, ribbon, transform } from '../core/geom.ts';
 import type { Pt } from '../core/geom.ts';
 import type { Part } from '../botany/part.ts';
 import { line, poly } from '../scene/types.ts';
@@ -383,6 +383,89 @@ const papercut: Material = {
   },
 };
 
+// ---------------------------------------------------------------- print
+
+/** The screen sits on one grid for the whole page, as a real plate does, so dots line up across parts. */
+function halftone(p: Part, gap: number): { large: Sub[]; small: Sub[] } {
+  const [x0, y0, x1, y1] = bounds(p.outline);
+  const [a, b] = p.axis;
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = dx * dx + dy * dy || 1;
+  const large: Sub[] = [];
+  const small: Sub[] = [];
+  for (let row = Math.floor(y0 / gap); row * gap <= y1; row++) {
+    const shift = row % 2 ? gap : 0;
+    for (let col = Math.floor((x0 - shift) / (gap * 2)); col * gap * 2 + shift <= x1; col++) {
+      const q: Pt = [col * gap * 2 + shift, row * gap];
+      if (!pointInPolygon(q, p.outline)) continue;
+      // Tone falls from the base of the part to its tip.
+      const along = ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / len;
+      if (along > 0.82) continue;
+      // A hair of length keeps the round cap on Canvas, which prunes zero-length lines.
+      (along < 0.38 ? large : small).push(line([q, [q[0] + 0.01, q[1]]], false));
+    }
+  }
+  return { large, small };
+}
+
+const riso: Material = {
+  name: 'riso',
+  korean: '리소 인쇄',
+  surface: 'paper',
+  paint(p, c) {
+    const ramp = rampFor(p, c);
+    const t = baseTone(p);
+    // Leaves print paler so the blooms lead and overprints do not turn to black.
+    const leaf = p.kind === 'leaf' || p.kind === 'sepal';
+    const flat = ramp(leaf ? 0.66 : clamp(t + 0.26, 0.34, 0.62));
+    if (dots(p)) return [{ op: 'fill', subs: outlineSubs(p), paint: ramp(0.3), blend: 'multiply' }];
+    if (thin(p)) return [{ op: 'fill', subs: outlineSubs(p), paint: ramp(0.3), blend: 'multiply' }];
+    const ops: DrawOp[] = [{ op: 'fill', subs: [body(p)], paint: flat, blend: 'multiply' }];
+    if (p.size >= 12) {
+      const gap = lerp(3.4, 2.4, c.detail);
+      const { large, small } = halftone(p, gap);
+      const screen: DrawOp[] = [];
+      const dot = ramp(leaf ? 0.4 : 0.2);
+      if (large.length) screen.push({ op: 'stroke', subs: large, paint: dot, width: gap * (leaf ? 0.6 : 0.92) });
+      if (small.length) screen.push({ op: 'stroke', subs: small, paint: dot, width: gap * (leaf ? 0.34 : 0.5) });
+      if (screen.length) ops.push({ op: 'group', clip: [body(p)], ops: screen, opacity: 0.86 });
+    }
+    // The key plate prints a little out of register.
+    const slip = Math.min(1.8, 0.5 + p.size * 0.03);
+    ops.push({ op: 'stroke', subs: [poly(transform(p.outline, slip, -slip * 0.7))], paint: ramp(0.12), width: Math.max(0.5, p.size * 0.012), blend: 'multiply' });
+    return ops;
+  },
+};
+
+// ---------------------------------------------------------------- inlay
+
+const celadon: Material = {
+  name: 'celadon',
+  korean: '청자 상감',
+  surface: 'celadon',
+  paint(p, c) {
+    const white = '#f1eee0';
+    const black = '#33362f';
+    const r = c.rng;
+    if (dots(p)) return [{ op: 'fill', subs: outlineSubs(p), paint: p.kind === 'anther' ? black : white }];
+    if (thin(p)) return [{ op: 'fill', subs: outlineSubs(p), paint: black }];
+    const w = Math.max(0.4, p.size * 0.016);
+    const glaze = mixHex(c.surface, '#1d3a33', 0.42);
+    const leaf = p.kind === 'leaf' || p.kind === 'sepal';
+    const inner: DrawOp[] = [];
+    // Glaze pools in the carved channel, so the rim of each inlay reads darker and softer.
+    inner.push({ op: 'stroke', subs: [body(p)], paint: glaze, width: Math.max(0.8, p.size * 0.08), opacity: 0.34 });
+    for (const v of (p.veins ?? []).slice(0, 7)) inner.push({ op: 'stroke', subs: [line(v)], paint: black, width: w * 0.7, opacity: 0.9 });
+    if (p.rib) inner.push({ op: 'stroke', subs: [line(p.rib)], paint: black, width: w });
+    return [
+      { op: 'fill', subs: [body(p)], paint: leaf ? mixHex(c.surface, black, 0.14) : white, opacity: leaf ? 1 : r.range(0.9, 1) },
+      { op: 'group', clip: [body(p)], ops: inner },
+      { op: 'stroke', subs: [body(p)], paint: black, width: w },
+    ];
+  },
+};
+
 // ---------------------------------------------------------------- light
 
 const neon: Material = {
@@ -406,7 +489,7 @@ const neon: Material = {
   },
 };
 
-export const MATERIALS = { watercolor, gouache, ink, engraving, gilt, stainedGlass, cloisonne, najeon, embroidery, papercut, neon } as const satisfies Record<string, Material>;
+export const MATERIALS = { watercolor, gouache, ink, engraving, gilt, stainedGlass, cloisonne, najeon, embroidery, papercut, riso, celadon, neon } as const satisfies Record<string, Material>;
 
 export type MaterialName = keyof typeof MATERIALS;
 export const MATERIAL_NAMES = Object.keys(MATERIALS) as MaterialName[];
