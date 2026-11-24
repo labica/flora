@@ -111,3 +111,6 @@ npm run demo        # demo/out/index.html 플레이그라운드
 Node 22.6 이상이 필요합니다.
 
 
+## 라이선스
+
+MIT — [LICENSE](LICENSE). 제3자 출처는 [NOTICE.md](NOTICE.md)를 보세요.
