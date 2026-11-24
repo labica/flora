@@ -17,3 +17,10 @@
 - Oklab, Bjorn Ottosson (2020). 변환 행렬은 퍼블릭 도메인.
 - 거리 변환, Felzenszwalb & Huttenlocher.
 - 논문 목록은 [docs/RESEARCH.md](docs/RESEARCH.md)를 보세요.
+
+## 이 저장소의 라이선스
+
+flora 자체는 MIT 입니다 ([LICENSE](LICENSE)). 위 두 MIT 프로젝트의 저작권 고지는 다음과 같으며, 허가 문구와 보증 부인 조항은 LICENSE 의 MIT 문구와 같습니다.
+
+- florilegium — Copyright (c) 2026 Kevin Raymond
+- tikz-flora — Copyright (c) 2026 the tikz-flora authors
